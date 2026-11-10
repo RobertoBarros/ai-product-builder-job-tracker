@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef } from "react";
+import { startTransition, useActionState, useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,10 +15,13 @@ type Props = {
   applicationId?: string;
   /** Adding a task with an application dropdown (tasks page). */
   applications?: { id: string; company: string; position: string }[];
+  /** Due date filled in when adding a task (calendar day). */
+  dueDate?: string;
+  /** Called after a successful save; without it, a new-task form is cleared instead. */
   onSaved?: () => void;
 };
 
-export function TaskForm({ task, applicationId, applications, onSaved }: Props) {
+export function TaskForm({ task, applicationId, applications, dueDate, onSaved }: Props) {
   const [state, formAction, pending] = useActionState(
     task ? updateTask : createTask,
     initialFormState,
@@ -27,9 +30,9 @@ export function TaskForm({ task, applicationId, applications, onSaved }: Props) 
 
   useEffect(() => {
     if (state.status !== "success") return;
-    if (task) onSaved?.();
+    if (onSaved) onSaved();
     else formRef.current?.reset();
-  }, [state, task, onSaved]);
+  }, [state, onSaved]);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,7 +40,8 @@ export function TaskForm({ task, applicationId, applications, onSaved }: Props) 
     startTransition(() => formAction(formData));
   }
 
-  const prefix = task ? `task-${task.id}` : "new-task";
+  const newTaskId = useId();
+  const prefix = task ? `task-${task.id}` : newTaskId;
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -83,7 +87,7 @@ export function TaskForm({ task, applicationId, applications, onSaved }: Props) 
             id={`${prefix}-due`}
             name="due_date"
             type="date"
-            defaultValue={task?.due_date ?? ""}
+            defaultValue={task?.due_date ?? dueDate ?? ""}
           />
         </div>
         <Button type="submit" disabled={pending}>
