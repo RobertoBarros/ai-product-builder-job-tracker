@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { AuthButton } from "@/components/auth-button";
+import { ColorThemeSwitcher } from "@/components/color-theme-switcher";
 
 export function NavBar() {
   return (
@@ -20,9 +21,12 @@ export function NavBar() {
             Tasks
           </Link>
         </div>
-        <Suspense>
-          <AuthButton />
-        </Suspense>
+        <div className="flex items-center gap-2">
+          <ColorThemeSwitcher />
+          <Suspense>
+            <AuthButton />
+          </Suspense>
+        </div>
       </div>
     </nav>
   );
