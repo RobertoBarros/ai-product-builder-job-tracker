@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { parseCsv } from "@/lib/csv";
-import { APPLICATION_STATUSES, isUuid, type FormState } from "@/lib/types";
+import {
+  APPLICATION_STATUSES,
+  isApplicationStatus,
+  isUuid,
+  type FormState,
+} from "@/lib/types";
 
 const CSV_COLUMNS = ["company", "position", "status", "applied_on", "notes"];
 const MAX_CSV_BYTES = 1024 * 1024; // 1 MB
@@ -32,7 +37,7 @@ function validateApplication(input: {
 
   if (!company) return { error: "Company is required." } as const;
   if (!position) return { error: "Position is required." } as const;
-  if (!(APPLICATION_STATUSES as readonly string[]).includes(status)) {
+  if (!isApplicationStatus(status)) {
     return {
       error: `Status must be one of: ${APPLICATION_STATUSES.join(", ")}.`,
     } as const;
@@ -190,6 +195,36 @@ export async function updateApplication(
 
   revalidatePath("/", "layout");
   return { status: "success", message: "Changes saved." };
+}
+
+/** Moves an application to another status (used by the kanban board). */
+export async function updateApplicationStatus(
+  id: string,
+  status: string,
+): Promise<FormState> {
+  if (!isUuid(id)) return { status: "error", message: "Invalid application." };
+  if (!isApplicationStatus(status)) {
+    return {
+      status: "error",
+      message: `Status must be one of: ${APPLICATION_STATUSES.join(", ")}.`,
+    };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("applications")
+    .update({ status })
+    .eq("id", id)
+    .select("id");
+  if (error) {
+    return { status: "error", message: `Could not move: ${error.message}` };
+  }
+  if (!data?.length) {
+    return { status: "error", message: "Application not found." };
+  }
+
+  revalidatePath("/", "layout");
+  return { status: "success", message: "Status updated." };
 }
 
 export async function deleteApplication(

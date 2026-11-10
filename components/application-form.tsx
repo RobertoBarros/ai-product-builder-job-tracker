@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef } from "react";
+import { startTransition, useActionState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,16 +20,15 @@ type Props = {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   application?: Application;
   submitLabel: string;
+  onSuccess: () => void;
 };
 
-export function ApplicationForm({ action, application, submitLabel }: Props) {
+export function ApplicationForm({ action, application, submitLabel, onSuccess }: Props) {
   const [state, formAction, pending] = useActionState(action, initialFormState);
-  const formRef = useRef<HTMLFormElement>(null);
 
-  // Clear the "add" form after a successful save. Edit forms keep their values.
   useEffect(() => {
-    if (state.status === "success" && !application) formRef.current?.reset();
-  }, [state, application]);
+    if (state.status === "success") onSuccess();
+  }, [state, onSuccess]);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +37,7 @@ export function ApplicationForm({ action, application, submitLabel }: Props) {
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {application && <input type="hidden" name="id" value={application.id} />}
 
       <div className="grid gap-4 sm:grid-cols-2">
