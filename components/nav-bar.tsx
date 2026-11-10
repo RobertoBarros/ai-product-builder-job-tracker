@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AuthButton } from "@/components/auth-button";
 import { ColorThemeSwitcher } from "@/components/color-theme-switcher";
+import { NavLinks } from "@/components/nav-links";
 
 export function NavBar() {
   return (
@@ -11,15 +12,9 @@ export function NavBar() {
           <Link href="/applications" className="font-semibold">
             Job Tracker
           </Link>
-          <Link href="/dashboard" className="hover:underline">
-            Dashboard
-          </Link>
-          <Link href="/applications" className="hover:underline">
-            Applications
-          </Link>
-          <Link href="/tasks" className="hover:underline">
-            Tasks
-          </Link>
+          <div className="flex items-center gap-1">
+            <NavLinks />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <ColorThemeSwitcher />

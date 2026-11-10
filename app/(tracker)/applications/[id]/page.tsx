@@ -2,14 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ApplicationForm } from "@/components/application-form";
 import { DeleteApplicationButton } from "@/components/delete-application-button";
+import { EditApplicationDialog } from "@/components/edit-application-dialog";
 import { FormMessage } from "@/components/form-message";
 import { TaskForm } from "@/components/task-form";
 import { TaskItem } from "@/components/task-item";
 import { requireUser } from "@/lib/auth";
 import { STATUS_LABELS, formatDate, isUuid, type Application, type Task } from "@/lib/types";
-import { updateApplication } from "../actions";
 
 async function ApplicationDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,6 +47,9 @@ async function ApplicationDetail({ params }: { params: Promise<{ id: string }> }
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">{application.company}</h1>
           <Badge variant="secondary">{STATUS_LABELS[application.status]}</Badge>
+          <div className="ml-auto">
+            <EditApplicationDialog application={application} />
+          </div>
         </div>
         <p className="text-muted-foreground">
           {application.position} · Applied {formatDate(application.applied_on)}
@@ -71,16 +73,6 @@ async function ApplicationDetail({ params }: { params: Promise<{ id: string }> }
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="border rounded-md p-4 flex flex-col gap-4">
-        <h2 className="font-semibold">Edit application</h2>
-        <ApplicationForm
-          key={`${application.id}`}
-          action={updateApplication}
-          application={application}
-          submitLabel="Save changes"
-        />
       </section>
 
       <section className="flex flex-col gap-2">

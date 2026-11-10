@@ -8,6 +8,10 @@ export const APPLICATION_STATUSES = [
 
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
+export function isApplicationStatus(value: unknown): value is ApplicationStatus {
+  return (APPLICATION_STATUSES as readonly unknown[]).includes(value);
+}
+
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {
   applied: "Applied",
   interviewing: "Interviewing",

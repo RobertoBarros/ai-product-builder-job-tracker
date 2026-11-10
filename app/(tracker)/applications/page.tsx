@@ -1,20 +1,18 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import { Badge } from "@/components/ui/badge";
-import { ApplicationForm } from "@/components/application-form";
+import { ApplicationBoard } from "@/components/application-board";
 import { FormMessage } from "@/components/form-message";
-import { ImportApplicationsForm } from "@/components/import-applications-form";
+import { NewApplicationDialog } from "@/components/new-application-dialog";
 import { requireUser } from "@/lib/auth";
-import { STATUS_LABELS, formatDate, type Application } from "@/lib/types";
-import { createApplication } from "./actions";
+import { summarizeTasksByApplication, todayIso } from "@/lib/stats";
+import type { Application } from "@/lib/types";
 
 async function ApplicationList() {
   const supabase = await requireUser();
   // RLS limits this to the logged-in user's rows.
-  const { data, error } = await supabase
-    .from("applications")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data, error }, tasksResult] = await Promise.all([
+    supabase.from("applications").select("*").order("created_at", { ascending: false }),
+    supabase.from("tasks").select("application_id, due_date, done"),
+  ]);
 
   if (error) {
     return (
@@ -26,44 +24,31 @@ async function ApplicationList() {
 
   const applications = (data ?? []) as Application[];
   if (applications.length === 0) {
-    return <p className="text-muted-foreground">No applications yet. Add your first one above.</p>;
+    return <p className="text-muted-foreground">No applications yet. Add your first one with the button above.</p>;
   }
 
   return (
-    <ul className="flex flex-col gap-2">
-      {applications.map((a) => (
-        <li key={a.id}>
-          <Link
-            href={`/applications/${a.id}`}
-            className="border rounded-md p-3 flex flex-wrap items-center gap-3 hover:bg-accent"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="font-medium">{a.company}</p>
-              <p className="text-sm text-muted-foreground">{a.position}</p>
-            </div>
-            <span className="text-sm text-muted-foreground">
-              {formatDate(a.applied_on)}
-            </span>
-            <Badge variant="secondary">{STATUS_LABELS[a.status]}</Badge>
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <>
+      {tasksResult.error && (
+        <FormMessage
+          state={{ status: "error", message: `Could not load tasks: ${tasksResult.error.message}` }}
+        />
+      )}
+      <ApplicationBoard
+        applications={applications}
+        taskSummaries={summarizeTasksByApplication(tasksResult.data ?? [], todayIso())}
+      />
+    </>
   );
 }
 
 export default function ApplicationsPage() {
   return (
     <>
-      <h1 className="text-2xl font-bold">Applications</h1>
-      <section className="border rounded-md p-4 flex flex-col gap-4">
-        <h2 className="font-semibold">Add application</h2>
-        <ApplicationForm action={createApplication} submitLabel="Add application" />
-      </section>
-      <section className="border rounded-md p-4 flex flex-col gap-4">
-        <h2 className="font-semibold">Import from CSV</h2>
-        <ImportApplicationsForm />
-      </section>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Applications</h1>
+        <NewApplicationDialog />
+      </div>
       <section className="flex flex-col gap-4">
         <h2 className="font-semibold">Your applications</h2>
         <Suspense fallback={<p className="text-muted-foreground">Loading...</p>}>

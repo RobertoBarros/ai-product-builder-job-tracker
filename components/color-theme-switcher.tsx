@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Palette } from "lucide-react";
+import { Laptop, Moon, Palette, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -58,7 +59,14 @@ function Swatches({ colors }: { colors: readonly Swatch[] }) {
   );
 }
 
+const MODES = [
+  { value: "light", label: "Light", Icon: Sun },
+  { value: "dark", label: "Dark", Icon: Moon },
+  { value: "system", label: "System", Icon: Laptop },
+] as const;
+
 export function ColorThemeSwitcher() {
+  const { theme, setTheme } = useTheme();
   // null until mounted: the saved theme is only known in the browser.
   const [selected, setSelected] = useState<Selection | null>(null);
 
@@ -72,11 +80,24 @@ export function ColorThemeSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Color theme">
+        <Button variant="ghost" size="sm" aria-label="Theme">
           <Palette size={16} className="text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="max-h-[70vh] overflow-y-auto">
+        <DropdownMenuLabel>Mode</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+          {MODES.map(({ value, label, Icon }) => (
+            <DropdownMenuRadioItem key={value} value={value}>
+              {label}
+              <span className="ml-auto pl-4" aria-hidden>
+                <Icon size={16} className="text-muted-foreground" />
+              </span>
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>Color theme</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup

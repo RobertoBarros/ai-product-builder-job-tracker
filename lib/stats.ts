@@ -127,3 +127,26 @@ export function computeStats(apps: AppRow[], tasks: TaskRow[], today: string): D
     dueSoon: withDue.filter((t) => t.daysFromToday >= 0 && t.daysFromToday <= DUE_SOON_DAYS),
   };
 }
+
+export type ApplicationTaskSummary = {
+  total: number;
+  done: number;
+  overdue: number;
+  nextDue: string | null; // earliest due date of an open task that is not overdue
+};
+
+/** Per-application task counts for the kanban cards, keyed by application id. */
+export function summarizeTasksByApplication(
+  tasks: Pick<TaskRow, "application_id" | "due_date" | "done">[],
+  today: string,
+): Record<string, ApplicationTaskSummary> {
+  const byApp: Record<string, ApplicationTaskSummary> = {};
+  for (const t of tasks) {
+    const s = (byApp[t.application_id] ??= { total: 0, done: 0, overdue: 0, nextDue: null });
+    s.total++;
+    if (t.done) s.done++;
+    else if (t.due_date && t.due_date < today) s.overdue++;
+    else if (t.due_date && (!s.nextDue || t.due_date < s.nextDue)) s.nextDue = t.due_date;
+  }
+  return byApp;
+}
